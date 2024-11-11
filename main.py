@@ -44,9 +44,9 @@ class Data:
         self.weight = w
         self.material = m
         print('written weight from class', self.weight)
-    def update_points(self, uid, points):
+    def update_points(self, uid):
         self.user_id = uid
-        self.points = self.weight * 1.5
+        self.points = int(self.weight) * 2
         print('written data from class')
         
 local_data = {'weight': 1212,}
@@ -81,7 +81,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("weight")
+    client.subscribe("plastic")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -99,15 +99,39 @@ mqttc.on_message = on_message
 
 @ui.page('/')
 def main_page() -> None:
+    test = app.storage.user["user_id"]
+    filter_dic = {
+        "filter": f"user_id ?= \"{test}\"",
+    }
+    try:
+        result = client.collection("transactions").get_list(
+        1, 20, filter_dic)
+        transactions = result.items
+    except:
+        print(test)   
+        print(filter_dic)
+        
     def logout() -> None:
         app.storage.user.clear()
         ui.navigate.to('/login')
 
-    with ui.column().classes('absolute-center items-center mb-8'):
-        ui.label(f'Hello {app.storage.user["username"]}!').classes('text-5xl mb-8')      
-        ui.label("Welcome to recycling sorting center")
-        ui.link('Start recycling', "/test")
-        ui.button(on_click=logout, icon='logout').props('outline round').classes('mt-8')
+    with ui.row().classes("absolute-center"):
+        with ui.column().classes('items-center mb-8'):
+            ui.label(f'Hello {app.storage.user["username"]}!').classes('text-5xl mb-8')      
+            ui.label("Welcome to recycling sorting center")
+            ui.link('Start recycling', "/test")
+            ui.button(on_click=logout, icon='logout').props('outline round').classes('mt-8')
+        with ui.column().classes('items-center mb-8'):   
+            with ui.row():  
+                ui.label("Total times recycled")
+                ui.label(result.total_items)
+            with ui.row():
+                with ui.column():
+                    for i in range(len(transactions)):
+                        with ui.row():
+                            ui.label(transactions[i].material)
+                            ui.label(transactions[i].weight)
+                            ui.label(transactions[i].time)
 
 def update_db():
     print('update db')
@@ -115,13 +139,20 @@ def update_db():
 @ui.page('/submit/{username}')
 def submit_data(username: str) -> None:
     global data
+    def home():
+        ui.navigate.to('/')
     with ui.column().classes('absolute-center items-center mb-8'):
         with ui.row():
             ui.label(f'Submitted data for {username}')
         with ui.row():
-            ui.label(f"Weight: {local_data.get('weight')}")
+            ui.label(f"Material: {data.material}")
+        with ui.row():
+            ui.label(f"Weight: {data.weight}")
+        with ui.row():
+            ui.label(f"Points earned: {data.points}")
             # ui.label("Weight: " + str(data.weight))
-        
+        with ui.row():
+            ui.button(on_click=home, icon='home').props('outline round').classes('mt-8')
     
     # TODO write to db
 
@@ -145,8 +176,7 @@ def login() -> Optional[RedirectResponse]:
                 'created': authData.record.created,
             }
         )
-        #print(type(authData.record.id))
-        data.update_points(authData.record.id, 0)
+        data.update_points(authData.record.id)
         if not authData.is_valid:
             ui.notify("invalid login details")
         ui.navigate.to(app.storage.user.get('referrer_path', '/'))
@@ -193,8 +223,7 @@ def register() -> None:
 @ui.page('/test')
 def test():
     def set_transaction():
-        if (data.material == ''):
-            data.material = 'paper'
+        data.update_points(app.storage.user.get('user_id'))
         transaction = {
                 "material": data.material,
                 "weight": data.weight,
@@ -203,22 +232,23 @@ def test():
                 "user_id": app.storage.user.get('user_id')
         };
         try:
+            print(transaction)
+            urlstring = '/submit/' + app.storage.user["username"]
             record = client.collection('transactions').create(transaction);
         except Exception as error:
             print(error.data['data'])
+        ui.navigate.to(urlstring)
         ui.notify("data sent")
     with ui.column().classes('absolute-center items-center mb-8'):
         with ui.row():  
-                ui.label("Weight of Plastic recycled: ").classes('text-2xl')
-                ui.label().bind_text_from(data, 'weight').classes('text-2xl font-bold')
-        with ui.row():
-            ui.label("Weight of paper recycled: ").classes('text-2xl')
-            ui.label().bind_text_from(local_data, 'weight').classes('text-2xl font-bold')
+                ui.label('You are currently recycling')
+                ui.label().bind_text_from(data, 'material')
+        with ui.row():  
+                ui.label("Weight: ").classes('text-2xl')
+                ui.label().bind_text_from(data, 'weight').classes('text-2xl font-bold') 
         with ui.row():
             ui.button('Confirm data', on_click=set_transaction)
-        with ui.row():
-            urlstring = '/submit/' + app.storage.user["username"]
-            ui.link('Submit data', urlstring)
+        
     
 if __name__ in {'__main__', '__mp_main__'}:
     mqttc.loop_start() 

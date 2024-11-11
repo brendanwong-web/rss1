@@ -1,7 +1,7 @@
 # RECYCLING SORTING CENTER
 THis project is a smart recycling bin
 
-to update git:
+# to update git:
 ```
 git rm -r --cached FolderName
 git commit -m "Removed folder from repository"
@@ -25,10 +25,7 @@ git push origin main
 4. Proceed with above steps
 
 ## TODO
-1. Setup dynamic functions for individual topics.
-2. Change ESP32 LED blink cycle.
-3. ESP32 publish message on input
-4. Build webserver with flask to display data
+1. Implement total weight recycled on home page
 
 ## NOTES
 rpi hostname changed to rss1_rpi
