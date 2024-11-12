@@ -6,7 +6,6 @@ use the great `Authlib package <https://docs.authlib.org/en/v0.13/client/starlet
 Here we just demonstrate the NiceGUI integration.
 """
 from typing import Optional, List
-from models import SignUpSchema, LoginSchema
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -20,7 +19,7 @@ from pocketbase import PocketBase  # Client also works the same
 from pocketbase.client import FileUpload
 
 client = PocketBase('http://127.0.0.1:8090')
-
+topics = ['paper', 'plastic']
 
 #DB
 
@@ -81,7 +80,9 @@ def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("plastic")
+    for t in range(len(topics)):
+        client.subscribe(topics[t])
+        
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -106,10 +107,21 @@ def main_page() -> None:
     try:
         result = client.collection("transactions").get_list(
         1, 20, filter_dic)
-        transactions = result.items
+        transactions = []
+        for t in range(len(result.items)):
+            transaction_new = {
+                "material": '',
+                "weight": 0,
+                "time": ''
+            }
+            transaction_new['material'] = result.items[t].material
+            transaction_new['weight'] = result.items[t].weight
+            transaction_new['time'] = result.items[t].time.split(' ')[0]
+            transactions.append(transaction_new)
+        transactions.reverse()
+        print(transactions[0]['material'])
     except:
-        print(test)   
-        print(filter_dic)
+        print("unkown error ocurred")
         
     def logout() -> None:
         app.storage.user.clear()
@@ -129,9 +141,9 @@ def main_page() -> None:
                 with ui.column():
                     for i in range(len(transactions)):
                         with ui.row():
-                            ui.label(transactions[i].material)
-                            ui.label(transactions[i].weight)
-                            ui.label(transactions[i].time)
+                            ui.label(transactions[i].get('material', 0))
+                            ui.label(transactions[i].get('weight', 0))
+                            ui.label(transactions[i].get('time', 0))
 
 def update_db():
     print('update db')
