@@ -87,5 +87,6 @@ mqttc.connect("172.20.10.10", 1883, 60)
 mqttc.subscribe("plastic")
 mqttc.subscribe("gtpc")
 mqttc.subscribe("unlck")
+mqttc.subscribe("logger")
 
 mqttc.loop_forever()
