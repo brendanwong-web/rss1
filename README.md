@@ -18,6 +18,11 @@ git push origin main
 8. Connect ESP32 to same LAN. Messages should start streaming in.
 9. Type ```mosquitto_pub -h 192.168.1.250 -t weight -m 'getWeight' -q 1``` to publish message
 
+# Setup for nicegui
+1. ```cd Documents/nicegui```
+2. Verify with ```pyenv virtualenvs```
+2. ```pyenv activate nicegui```
+
 ## If starting on different setup
 1. Run ```hostname -I``` in bash to get ip address
 2. Change **hostname** in RPI-Sub.py to ip address
@@ -28,10 +33,5 @@ git push origin main
 1. Implement total weight recycled on home page
 
 ## NOTES
-rpi hostname changed to rss1_rpi
-ESP-32 publishes weight, usnd
-RPI subscribes weight, usnd
-RPI publishes gtpc, message = weight/ultrasound 
-` mosquitto_pub -h 192.168.1.250 -t gtpc -m 'weight' -q 1 `
-in Documents directory,
-`tmuxinator start --local rss1`
+1. No need for series resistor when using solenoid
+2. `tmuxinator start --local rss1`

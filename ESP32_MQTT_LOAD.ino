@@ -25,7 +25,7 @@ long duration = 0;
 float distanceCm = 0;
 
 // Lock
-const int UNLCK_PIN = 18;
+const int UNLCK_PIN = 5;
 
 // Servo
 const int SERVO_PIN = 23;
@@ -76,11 +76,11 @@ void openPlatform() {
 	// 	delay(15);             // waits 15ms for the servo to reach the position
 	// }
   servo1.write(180);
-  delay(500);
+  delay(400);
   servo1.write(90);
   delay(2000);
   servo1.write(0);
-  delay(650);
+  delay(420);
   servo1.write(90);
 
 }
@@ -105,11 +105,22 @@ void sendUsnd() {
   delay(2000);
 }
 
+void flashLed() {
+  for (int i = 0;i<3;i++) {
+    digitalWrite(LED, HIGH);
+    delay(100);
+    digitalWrite(LED, LOW);
+    delay(100);
+  }
+
+}
+
 void setup() {
 
   Serial.begin(115200);
   setCpuFrequencyMhz(80);
   pinMode(LED, OUTPUT);
+  pinMode(UNLCK_PIN, OUTPUT);
   digitalWrite(LED, LOW);
   WiFi.begin(ssid, password);
   Serial.println("connected wifi");
@@ -139,10 +150,12 @@ void setup() {
 	servo1.setPeriodHertz(50);    // standard 50 hz servo
 	servo1.attach(SERVO_PIN, 900, 2100);
   servo1.write(90);
+  digitalWrite(LED, LOW);
   Serial.println("setup finished");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {   //callback includes topic and payload ( from which (topic) the payload is comming)
+  flashLed();
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -188,7 +201,8 @@ void reconnect() {
     Serial.println("Attempting MQTT connection...");
     if (client.connect("ESP32_1")) {
       Serial.println("connected mqtt");
-
+      client.subscribe("gtpc");
+      client.subscribe("unlck");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -217,18 +231,18 @@ void loop() {
 
 void connectmqtt(){
   client.connect("ESP32_1");  // ESP will connect to mqtt broker with clientID
-    Serial.println("connected to MQTT");
-    // Once connected, publish an announcement...
+  Serial.println("connected to MQTT");
+  // Once connected, publish an announcement...
 
-    // ... and resubscribe 
-    client.subscribe("gtpc");
-    client.subscribe("unlck");
-    client.publish("plastic",  "connected to MQTT, plastic");
-    client.publish("logger",  "connected to MQTT, logger");
-    
-    if (!client.connected())
-    {
-      Serial.println("Reconnecting MQTT...");
-      reconnect();
-    }
+  // ... and resubscribe 
+  client.subscribe("gtpc");
+  client.subscribe("unlck");
+  client.publish("plastic",  "connected to MQTT, plastic");
+  client.publish("logger",  "connected to MQTT, logger");
+  
+  if (!client.connected())
+  {
+    Serial.println("Reconnecting MQTT...");
+    reconnect();
+  }
 }

@@ -19,7 +19,7 @@ from pocketbase import PocketBase  # Client also works the same
 from pocketbase.client import FileUpload
 
 client = PocketBase('http://127.0.0.1:8090')
-topics = ['paper', 'plastic']
+topics = ['logger', 'plastic']
 
 #DB
 
@@ -27,7 +27,7 @@ topics = ['paper', 'plastic']
 unrestricted_page_routes = {'/login', '/register', '/test'}
 
 #MQTT
-MQTT_HOST = '192.168.1.250'
+MQTT_HOST = '172.20.10.10'
 MQTT_PORT = 1883
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
@@ -66,8 +66,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 app.add_middleware(AuthMiddleware)
-
-mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
 def update_data(x, t):
     global local_data
@@ -251,6 +249,10 @@ def test():
             print(error.data['data'])
         ui.navigate.to(urlstring)
         ui.notify("data sent")
+    def unlock_door():
+        mqttc.publish("unlck", "1", qos=1)
+    def release_compartment():
+        mqttc.publish("gtpc", "open", qos=1)
     with ui.column().classes('absolute-center items-center mb-8'):
         with ui.row():  
                 ui.label('You are currently recycling')
@@ -259,10 +261,12 @@ def test():
                 ui.label("Weight: ").classes('text-2xl')
                 ui.label().bind_text_from(data, 'weight').classes('text-2xl font-bold') 
         with ui.row():
+            ui.button('Unlock', on_click=unlock_door)
+            ui.button('Release', on_click=release_compartment)
             ui.button('Confirm data', on_click=set_transaction)
         
     
 if __name__ in {'__main__', '__mp_main__'}:
     mqttc.loop_start() 
-    ui.run(storage_secret='stasrtrt')
+    ui.run(storage_secret='stasrtrt')   
     
